@@ -62,6 +62,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardUserAdapter(XBoardUserInfoApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardUserAdapter(V2BoardUserInfoApi(_httpService));
     }
   }
@@ -71,6 +72,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardPlanAdapter(XBoardPlanApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardPlanAdapter(V2BoardPlanApi(_httpService));
     }
   }
@@ -83,6 +85,7 @@ class ApiFactory {
           XBoardCouponApi(_httpService),
         );
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardOrderAdapter(
           V2BoardOrderApi(_httpService),
           V2BoardCouponApi(_httpService),
@@ -95,6 +98,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardSubscriptionAdapter(XBoardSubscriptionApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardSubscriptionAdapter(V2BoardSubscriptionApi(_httpService));
     }
   }
@@ -104,6 +108,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardInviteAdapter(XBoardInviteApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardInviteAdapter(V2BoardInviteApi(_httpService));
     }
   }
@@ -113,6 +118,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardNoticeAdapter(XBoardNoticeApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardNoticeAdapter(V2BoardNoticeApi(_httpService));
     }
   }
@@ -122,6 +128,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardTicketAdapter(XBoardTicketApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardTicketAdapter(V2BoardTicketApi(_httpService));
     }
   }
@@ -131,6 +138,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardConfigAdapter(XBoardConfigApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardConfigAdapter(V2BoardConfigApi(_httpService));
     }
   }
@@ -140,6 +148,7 @@ class ApiFactory {
       case PanelType.xboard:
         return XBoardPaymentAdapter(XBoardPaymentApi(_httpService));
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardPaymentAdapter(V2BoardPaymentApi(_httpService));
     }
   }
@@ -154,6 +163,7 @@ class ApiFactory {
           XBoardResetPasswordApi(_httpService),
         );
       case PanelType.v2board:
+      case PanelType.xv2b:
         return V2BoardAuthAdapter(
           V2BoardLoginApi(_httpService),
           V2BoardRegisterApi(_httpService),
