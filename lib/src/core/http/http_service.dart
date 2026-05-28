@@ -9,10 +9,12 @@ import '../auth/token_manager.dart';
 import '../auth/auth_interceptor.dart';
 import '../logging/sdk_logger.dart';
 import 'http_config.dart';
+import '../factory/panel_type.dart';
 
 class HttpService {
   final String baseUrl;
   final HttpConfig httpConfig;
+  final PanelType? panelType;
   late final Dio _dio;
   TokenManager? _tokenManager;
   AuthInterceptor? _authInterceptor;
@@ -22,26 +24,33 @@ class HttpService {
   HttpService._internal(
     this.baseUrl,
     this.httpConfig,
-    this._tokenManager,
-  );
+    this._tokenManager, {
+    this.panelType,
+  });
 
   /// 创建 HttpService 实例（异步工厂方法）
   static Future<HttpService> create(
     String baseUrl, {
     TokenManager? tokenManager,
     HttpConfig? httpConfig,
+    PanelType? panelType,
   }) async {
     final config = httpConfig ?? HttpConfig.defaultConfig();
-    final service = HttpService._internal(baseUrl, config, tokenManager);
-    
+    final service = HttpService._internal(
+      baseUrl,
+      config,
+      tokenManager,
+      panelType: panelType,
+    );
+
     // 如果启用证书固定，先加载证书
     if (config.enableCertificatePinning == true) {
       await service._loadClientCertificate();
     }
-    
+
     // 初始化 Dio
     service._initializeDio();
-    
+
     return service;
   }
 
@@ -131,7 +140,7 @@ class HttpService {
 
     // 添加认证拦截器（最后添加，确保它能处理认证相关错误）
     if (_tokenManager != null) {
-      _authInterceptor = AuthInterceptor(tokenManager: _tokenManager!);
+      _authInterceptor = AuthInterceptor(tokenManager: _tokenManager!, panelType: panelType);
       _dio.interceptors.add(_authInterceptor!);
     }
   }
@@ -146,7 +155,7 @@ class HttpService {
     }
     
     // 添加新的认证拦截器
-    _authInterceptor = AuthInterceptor(tokenManager: tokenManager);
+    _authInterceptor = AuthInterceptor(tokenManager: tokenManager, panelType: panelType);
     _dio.interceptors.add(_authInterceptor!);
   }
 
@@ -363,10 +372,11 @@ class HttpService {
 
     final jsonResponse = responseData;
 
-    // 兼容两种响应格式：
+    // 兼容三种响应格式：
     // 1. XBoard格式: {status: "success", data: {...}}
     // 2. 通用格式: {success: true, data: {...}}
-    
+    // 3. 简洁格式: {data: {...}} (如 V2Board 的 /passport/auth/login)
+
     if (jsonResponse.containsKey('status')) {
       // XBoard格式 -> 转换为通用格式
       return {
@@ -378,6 +388,9 @@ class HttpService {
       };
     } else if (jsonResponse.containsKey('success')) {
       // 已经是通用格式，直接返回
+      return jsonResponse;
+    } else if (jsonResponse.containsKey('data') && jsonResponse.keys.length == 1) {
+      // 简洁格式: 只有data字段，直接返回（不再包装）
       return jsonResponse;
     } else {
       // 其他格式，包装为通用格式

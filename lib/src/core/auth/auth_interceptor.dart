@@ -1,18 +1,22 @@
 import 'package:dio/dio.dart';
 import 'token_manager.dart';
 import '../logging/sdk_logger.dart';
+import '../factory/panel_type.dart';
 
 /// 认证拦截器（简化版）
 /// 自动为HTTP请求添加token，不处理自动刷新和重试
 class AuthInterceptor extends Interceptor {
   final TokenManager _tokenManager;
   final Set<String> _publicEndpoints;
+  final PanelType? _panelType;
 
   AuthInterceptor({
     required TokenManager tokenManager,
     Set<String>? publicEndpoints,
+    PanelType? panelType,
   })  : _tokenManager = tokenManager,
-        _publicEndpoints = publicEndpoints ?? _defaultPublicEndpoints;
+        _publicEndpoints = publicEndpoints ?? _defaultPublicEndpoints,
+        _panelType = panelType;
 
   /// 默认的公开端点（无需token的接口）
   static const Set<String> _defaultPublicEndpoints = {
@@ -35,10 +39,21 @@ class AuthInterceptor extends Interceptor {
       // 获取token并添加到请求头
       final token = await _tokenManager.getToken();
       if (token != null && token.isNotEmpty) {
-        // 确保token有Bearer前缀
-        options.headers['Authorization'] = token.startsWith('Bearer ') 
-            ? token 
-            : 'Bearer $token';
+        // V2Board/XV2B 不需要 Bearer 前缀，XBoard 需要
+        String authValue;
+        if (_panelType == PanelType.v2board || _panelType == PanelType.xv2b) {
+          // V2Board/XV2B: 直接使用 token，不添加 Bearer 前缀
+          authValue = token;
+        } else {
+          // XBoard: 添加 Bearer 前缀
+          authValue = token.startsWith('Bearer ')
+              ? token
+              : 'Bearer $token';
+        }
+        options.headers['Authorization'] = authValue;
+        SdkLogger.d('[AuthInterceptor] Adding token to request: ${options.path}, panelType: $_panelType, token length: ${token.length}');
+      } else {
+        SdkLogger.w('[AuthInterceptor] No token available for request: ${options.path}');
       }
 
       handler.next(options);

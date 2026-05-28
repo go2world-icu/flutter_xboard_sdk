@@ -20,7 +20,8 @@ class V2BoardAuthAdapter implements AuthApi {
   @override
   Future<String?> login(String email, String password) async {
     final response = await _loginApi.login(email, password);
-    return response.token;
+    // V2Board 使用 auth_data (JWT) 进行认证，而不是普通 token
+    return response.authData ?? response.token;
   }
 
   @override

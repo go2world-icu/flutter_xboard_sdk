@@ -37,12 +37,25 @@ class V2BoardInviteApi {
   }) async {
     try {
       final result = await _httpService.getRequest(
-        '/api/v1/user/comm/fetch?current=$current&page_size=$pageSize',
+        '/api/v1/user/invite/details?current=$current&page_size=$pageSize',
       );
-      final List<dynamic> detailsJson = result['data'] as List? ?? [];
-      final details = detailsJson
-          .map((json) => CommissionDetail.fromJson(json as Map<String, dynamic>))
-          .toList();
+
+      final dynamic dataField = result['data'];
+
+      List<CommissionDetail> details;
+      if (dataField is List) {
+        details = dataField
+            .map((e) => CommissionDetail.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (dataField is Map<String, dynamic>) {
+        final detailData = dataField['data'] as List<dynamic>? ?? [];
+        details = detailData
+            .map((e) => CommissionDetail.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        details = [];
+      }
+
       return ApiResponse(success: true, data: details);
     } catch (e) {
       if (e is XBoardException) rethrow;

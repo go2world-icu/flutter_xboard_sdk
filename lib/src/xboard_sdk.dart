@@ -91,9 +91,10 @@ class XBoardSDK {
         : HttpConfig.defaultConfig());
     
     _httpService = await HttpService.create(
-      cleanUrl, 
-      tokenManager: _tokenManager, 
+      cleanUrl,
+      tokenManager: _tokenManager,
       httpConfig: finalHttpConfig,
+      panelType: _panelType,
     );
 
     // 创建 API 工厂
@@ -106,8 +107,13 @@ class XBoardSDK {
   /// 保存Token
   Future<void> saveToken(String token) async {
     _checkInitialized();
-    final fullToken = token.startsWith('Bearer ') ? token : 'Bearer $token';
-    await _tokenManager.saveToken(fullToken);
+    // V2Board 和 XV2B 不需要 Bearer 前缀，XBoard 需要
+    if (_panelType == PanelType.v2board || _panelType == PanelType.xv2b) {
+      await _tokenManager.saveToken(token);
+    } else {
+      final fullToken = token.startsWith('Bearer ') ? token : 'Bearer $token';
+      await _tokenManager.saveToken(fullToken);
+    }
   }
 
   /// 获取当前Token

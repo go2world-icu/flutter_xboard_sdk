@@ -42,7 +42,7 @@ class V2BoardOrderAdapter implements OrderApi {
   Future<PaymentResultModel> checkoutOrder(String tradeNo, String method) async {
     final response = await _api.submitPayment(tradeNo: tradeNo, method: method);
     
-    if (response.type == 1) {
+    if (response.type == 1 || response.type == 0) { // V2Board might use 0 for success
       return PaymentResultModel.redirect(url: response.data as String);
     } else if (response.type == 2) { // V2Board might use 2 for success?
        return PaymentResultModel.success(message: 'Payment successful');

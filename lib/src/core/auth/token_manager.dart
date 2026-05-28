@@ -81,8 +81,9 @@ class TokenManager {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_storageKey, token);
       }
-      
+
       _cachedToken = token;
+      SdkLogger.d('[TokenManager] Token saved, length: ${token.length}, prefix: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
       _updateAuthState(AuthState.authenticated);
     } catch (e, stackTrace) {
       SdkLogger.e('[TokenManager] Failed to save token', e, stackTrace);
@@ -96,9 +97,10 @@ class TokenManager {
     try {
       // 优先返回缓存的token
       if (_cachedToken != null) {
+        SdkLogger.d('[TokenManager] Returning cached token, length: ${_cachedToken!.length}');
         return _cachedToken;
       }
-      
+
       // 从存储读取
       if (_useMemoryStorage) {
         _cachedToken = _memoryToken;
@@ -106,14 +108,16 @@ class TokenManager {
         final prefs = await SharedPreferences.getInstance();
         _cachedToken = prefs.getString(_storageKey);
       }
-      
+
       // 更新认证状态
       if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+        SdkLogger.d('[TokenManager] Token loaded from storage, length: ${_cachedToken!.length}');
         _updateAuthState(AuthState.authenticated);
       } else {
+        SdkLogger.d('[TokenManager] No token found in storage');
         _updateAuthState(AuthState.unauthenticated);
       }
-      
+
       return _cachedToken;
     } catch (e, stackTrace) {
       SdkLogger.e('[TokenManager] Failed to get token', e, stackTrace);
