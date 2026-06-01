@@ -70,7 +70,7 @@ class V2BoardInviteApi {
       if (codes.isEmpty) {
         throw ApiException('没有可用的邀请码');
       }
-      return '$baseUrl/#/register?code=${codes.first.code}';
+      return '$baseUrl/login#/register?code=${codes.first.code}';
     } catch (e) {
       if (e is XBoardException) rethrow;
       throw ApiException('V2Board 生成邀请链接失败: $e');
