@@ -20,6 +20,7 @@ class HttpService {
   AuthInterceptor? _authInterceptor;
   String? _expectedCertificatePem;
   bool _certificateLoadFailed = false;
+  InternetAddress? _resolvedProxyAddress;
 
   HttpService._internal(
     this.baseUrl,
@@ -46,6 +47,12 @@ class HttpService {
     // 如果启用证书固定，先加载证书
     if (config.enableCertificatePinning == true) {
       await service._loadClientCertificate();
+    }
+
+    // 预解析代理主机名（避免同步 InternetAddress 构造失败）
+    if (config.proxyUrl != null && config.proxyUrl!.isNotEmpty) {
+      final proxyConfig = _parseProxyConfig(config.proxyUrl!);
+      service._resolvedProxyAddress = await _resolveHost(proxyConfig['host']!);
     }
 
     // 初始化 Dio
@@ -82,16 +89,21 @@ class HttpService {
         final proxyConfig = _parseProxyConfig(httpConfig.proxyUrl!);
         SdkLogger.d('[XBoardSDK] 🔄 解析: host=${proxyConfig['host']}, port=${proxyConfig['port']}, auth=${proxyConfig['username'] != null}');
 
-        // 使用 socks5_proxy 配置代理
-        final proxySettings = ProxySettings(
-          InternetAddress(proxyConfig['host']!),
-          int.parse(proxyConfig['port']!),
-          username: proxyConfig['username'],
-          password: proxyConfig['password'],
-        );
+        // 使用预解析的代理地址（避免同步 DNS 失败）
+        final proxyAddress = _resolvedProxyAddress;
+        if (proxyAddress == null) {
+          SdkLogger.e('[XBoardSDK] ❌ 代理地址预解析失败，跳过代理配置');
+        } else {
+          final proxySettings = ProxySettings(
+            proxyAddress,
+            int.parse(proxyConfig['port']!),
+            username: proxyConfig['username'],
+            password: proxyConfig['password'],
+          );
 
-        SocksTCPClient.assignToHttpClient(client, [proxySettings]);
-        SdkLogger.i('[XBoardSDK] ✅ SOCKS5 代理配置完成');
+          SocksTCPClient.assignToHttpClient(client, [proxySettings]);
+          SdkLogger.i('[XBoardSDK] ✅ SOCKS5 代理配置完成');
+        }
       }
       
       // 配置SSL证书验证
@@ -491,6 +503,22 @@ class HttpService {
 
   /// 获取TokenManager
   TokenManager? get tokenManager => _tokenManager;
+
+  /// 异步解析主机名，返回 InternetAddress
+  /// 用异步 lookup 替代同步 InternetAddress() 构造
+  static Future<InternetAddress?> _resolveHost(String host) async {
+    try {
+      return InternetAddress(host);
+    } on ArgumentError {
+      try {
+        final addresses = await InternetAddress.lookup(host);
+        if (addresses.isNotEmpty) {
+          return addresses.first;
+        }
+      } catch (_) {}
+      return null;
+    }
+  }
 
   /// 解析代理配置
   ///
