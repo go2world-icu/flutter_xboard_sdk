@@ -22,9 +22,15 @@ class V2BoardInviteApi {
 
   Future<ApiResponse<InviteCode>> generateInviteCode() async {
     try {
-      final result = await _httpService.postRequest('/api/v1/user/invite/save', {});
-      final code = InviteCode.fromJson(result['data'] as Map<String, dynamic>);
-      return ApiResponse(success: true, data: code);
+      final saveResult = await _httpService.getRequest('/api/v1/user/invite/save');
+      if (saveResult['data'] != true) {
+        throw ApiException('Generate invite code failed');
+      }
+      final inviteInfo = await getInviteInfo();
+      if (inviteInfo.data == null || inviteInfo.data!.codes.isEmpty) {
+        throw ApiException('No invite code found after generation');
+      }
+      return ApiResponse(success: true, data: inviteInfo.data!.codes.first);
     } catch (e) {
       if (e is XBoardException) rethrow;
       throw ApiException('V2Board 生成邀请码失败: $e');
