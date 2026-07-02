@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'core/http/http_service.dart';
 import 'core/auth/token_manager.dart';
 import 'core/factory/panel_type.dart';
@@ -242,6 +243,33 @@ class XBoardSDK {
   Future<void> logout() async {
     await auth.logout();
     await clearToken();
+  }
+
+  /// 上报日志文件
+  ///
+  /// [fileBytes] 日志文件二进制内容
+  /// [filename] 文件名（如 app_2026-07-02.log.enc）
+  /// [deviceInfoJson] 设备信息 JSON 字符串
+  /// [customUrl] 自定义上报地址，为空则用 SDK baseUrl 拼接
+  Future<bool> reportLog(
+    List<int> fileBytes,
+    String filename, {
+    String? deviceInfoJson,
+    String? customUrl,
+  }) async {
+    _checkInitialized();
+    try {
+      final url = customUrl ?? '$_httpService.baseUrl/api/v1/user/report';
+      final formData = FormData.fromMap({
+        'log_file': MultipartFile.fromBytes(fileBytes, filename: filename),
+        if (deviceInfoJson != null) 'device_info': deviceInfoJson,
+      });
+      final result = await _httpService.postMultipart(url, formData);
+      return result['status'] == 'success' || result['data'] != null;
+    } catch (e) {
+      SdkLogger.e('日志上报失败: $e');
+      return false;
+    }
   }
 
   /// 释放SDK资源并重置状态

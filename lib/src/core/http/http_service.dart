@@ -200,6 +200,27 @@ class HttpService {
     }
   }
 
+  /// 发送 multipart/form-data POST 请求（文件上传）
+  Future<Map<String, dynamic>> postMultipart(String path, FormData formData, {Map<String, String>? headers}) async {
+    try {
+      final response = await _dio.post(
+        path,
+        data: formData,
+        options: Options(
+          headers: headers,
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return {'data': response.data};
+    } catch (e) {
+      throw _convertDioError(e);
+    }
+  }
+
   /// 发送PUT请求
   Future<Map<String, dynamic>> putRequest(String path, Map<String, dynamic> data, {Map<String, String>? headers}) async {
     try {
